@@ -1,0 +1,11 @@
+[tool.pyright]
+include = ["*"]
+exclude = [
+    "__pycache__",
+    "venv36",
+    ".git",
+]
+
+pythonVersion = "3.7"
+pythonPlatform = "Linux"
+env = "venv36"
