@@ -1,11 +1,10 @@
 from color import Color
+from dataclasses import dataclass
 
-
+@dataclass
 class PlayerCastlingPermissions:
-
-    def __init__(self, can_kingside=True, can_queenside=True):
-        self.can_kingside = can_kingside
-        self.can_queenside = can_queenside
+    can_kingside: bool = True
+    can_queenside: bool = True
 
 
 class GlobalCastlingPermissions:
@@ -14,23 +13,29 @@ class GlobalCastlingPermissions:
         self.white_castling_perms = PlayerCastlingPermissions()
         self.black_castling_perms = PlayerCastlingPermissions()
 
-    def get_castling_perms(self, color):
+    def get_castling_perms(self, color) -> PlayerCastlingPermissions:
         if color is Color.WHITE:
             return self.white_castling_perms
         else:
             return self.black_castling_perms
 
-    def can_castle_kingside(self, color):
+    def can_castle_kingside(self, color) -> bool:
         return self.get_castling_perms(color).can_kingside
 
-    def can_castle_queenside(self, color):
+    def can_castle_queenside(self, color) -> bool:
         return self.get_castling_perms(color).can_queenside
 
+    def enable_castle_kingside(self, color):
+        self.get_castling_perms(color).can_kingside = True
+
+    def enable_castle_queenside(self, color):
+        self.get_castling_perms(color).can_queenside = True
+
     def disable_castle_kingside(self, color):
-        self.get_castling_perms(color).kingside = False
+        self.get_castling_perms(color).can_kingside = False
 
     def disable_castle_queenside(self, color):
-        self.get_castling_perms(color).queenside = False
+        self.get_castling_perms(color).can_queenside = False
 
     def disable_all_castling(self):
         self.disable_castle_kingside(Color.WHITE)

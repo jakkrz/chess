@@ -1,5 +1,6 @@
 from enum import Enum, auto
-
+from dataclasses import dataclass
+from color import Color
 
 class PieceType(Enum):
     KING = auto()
@@ -9,21 +10,14 @@ class PieceType(Enum):
     ROOK = auto()
     PAWN = auto()
 
-
+@dataclass
 class Piece:
+    color: Color
+    piece_type: PieceType
 
-    def __init__(self, color, piece_type):
-        self.color = color
-        self.piece_type = piece_type
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.color.name} {self.piece_type.name}>"
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.color, self.piece_type))
 
-    def __eq__(self, other):
-        if not isinstance(other, Piece):
-            return False
-
-        return self.color == other.color and self.piece_type == other.piece_type

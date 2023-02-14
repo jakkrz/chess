@@ -1,5 +1,6 @@
 from piece import Piece, PieceType
 from color import Color
+from typing import List, Optional
 
 _emoji_mapping = {
     Piece(Color.BLACK, PieceType.KING): "♔",
@@ -16,8 +17,10 @@ _emoji_mapping = {
     Piece(Color.WHITE, PieceType.PAWN): "♟︎",
 }
 
+BoardMatrix = List[List[Optional[Piece]]]
 
-def create_matrix(files, ranks):
+
+def create_matrix(files, ranks) -> BoardMatrix:
     result = []
 
     for _ in range(ranks):
@@ -28,13 +31,14 @@ def create_matrix(files, ranks):
 
 class Board:
 
-    def __init__(self, matrix=None):
+    def __init__(self, matrix: Optional[BoardMatrix] = None):
         if matrix is None:
             matrix = create_matrix(8, 8)
 
         self.matrix = matrix
 
-    def __repr__(self):
+
+    def __repr__(self) -> str:
         result = ""
 
         for rank in self.matrix[::-1]:

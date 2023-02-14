@@ -10,7 +10,7 @@ from coordinate import Coordinate
 
 class FenParser:
 
-    def parse(self, string):
+    def parse(self, string: str):
         result = GameState()
         fields = self._split_into_fields(string)
         result.board = self._parse_board(fields[0])
@@ -91,18 +91,18 @@ class FenParser:
 
     def _get_castling_permissions(self, string):
         result = GlobalCastlingPermissions()
+        result.disable_all_castling()
 
         if string == "-":
-            result.disable_all_castling()
             return result
 
         for character in string:
             piece = self._get_piece_by_character(character)
 
-            if piece.piece_type == PieceType.KING:
-                result.disable_castle_kingside(piece.color)
-            elif piece.piece_type == PieceType.QUEEN:
-                result.disable_castle_queenside(piece.color)
+            if piece.piece_type is PieceType.KING:
+                result.enable_castle_kingside(piece.color)
+            elif piece.piece_type is PieceType.QUEEN:
+                result.enable_castle_queenside(piece.color)
             else:
                 raise InvalidPieceString(character)
 
@@ -126,7 +126,7 @@ class FenParser:
         except ValueError:
             raise InvalidFullmoveString
 
-    def serialize(self, game_state):
+    def serialize(self, game_state: GameState):
         result = "{} {} {} {} {} {}"
 
         encoded_board = self._encode_board(game_state.board)
