@@ -1,11 +1,12 @@
-from custom_exceptions import (InvalidPieceString, InvalidColorString,
+from custom_exceptions import (InvalidColorString,
                                InvalidHalfmoveString, InvalidFullmoveString)
-from game_state.castling_permissions import GlobalCastlingPermissions
+from game_state.castling_permissions import CastlingPermissions
 from game_state.game_state import GameState
-from piece import PieceType, Piece
+from piece import PieceType
 from color import Color
 from game_state.board import Board
 from coordinate import Coordinate
+import notation
 
 
 class FenParser:
@@ -16,8 +17,7 @@ class FenParser:
         result.board = self._parse_board(fields[0])
         result.color_to_move = self._get_color_to_move(fields[1])
 
-        castling_perms = self._get_castling_permissions(fields[2])
-        result.global_castling_permissions = castling_perms
+        result.castling_permissions = CastlingPermissions.from_string(fields[2])
 
         en_passant_target = self._get_en_passant_target_square(fields[3])
         result.en_passant_target_square = en_passant_target
@@ -55,31 +55,10 @@ class FenParser:
                 file += files_to_skip
                 continue
 
-            piece = self._get_piece_by_character(character)
+            piece = notation.get_piece_by_character(character)
             rank[file] = piece
             file += 1
 
-    def _get_piece_by_character(self, character):
-        color = Color.WHITE if character.isupper() else Color.BLACK
-
-        lower_character = character.lower()
-
-        if lower_character == "k":
-            piece_type = PieceType.KING
-        elif lower_character == "q":
-            piece_type = PieceType.QUEEN
-        elif lower_character == "n":
-            piece_type = PieceType.KNIGHT
-        elif lower_character == "r":
-            piece_type = PieceType.ROOK
-        elif lower_character == "p":
-            piece_type = PieceType.PAWN
-        elif lower_character == "b":
-            piece_type = PieceType.BISHOP
-        else:
-            raise InvalidPieceString(character)
-
-        return Piece(color, piece_type)
 
     def _get_color_to_move(self, string):
         if string == "w":
@@ -89,24 +68,6 @@ class FenParser:
         else:
             raise InvalidColorString
 
-    def _get_castling_permissions(self, string):
-        result = GlobalCastlingPermissions()
-        result.disable_all_castling()
-
-        if string == "-":
-            return result
-
-        for character in string:
-            piece = self._get_piece_by_character(character)
-
-            if piece.piece_type is PieceType.KING:
-                result.enable_castle_kingside(piece.color)
-            elif piece.piece_type is PieceType.QUEEN:
-                result.enable_castle_queenside(piece.color)
-            else:
-                raise InvalidPieceString(character)
-
-        return result
 
     def _get_en_passant_target_square(self, string):
         if string == "-":
@@ -132,8 +93,7 @@ class FenParser:
         encoded_board = self._encode_board(game_state.board)
         encoded_to_move = self._encode_color_to_move(game_state.color_to_move)
 
-        castling_perms = game_state.global_castling_permissions
-        encoded_castling_perms = self._encode_castling_perms(castling_perms)
+        encoded_castling_perms = str(game_state.castling_permissions)
 
         en_passant = game_state.en_passant_target_square
         encoded_en_passant = self._encode_en_passant_target_square(en_passant)
