@@ -6,7 +6,7 @@ def main():
 
     print(game_state.board)
 
-    files.save_game_to_file("game.fen", game_state)
+    files.save_game_to_file("saved_games/game.fen", game_state)
 
 
 
