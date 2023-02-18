@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import notation
 
 @dataclass
 class Coordinate:
@@ -19,29 +20,10 @@ class Coordinate:
         if len(string) != 2:
             raise ValueError(string)
 
-        file = Coordinate._get_file_from_char(string[0])
-        rank = Coordinate._get_rank_from_char(string[1])
+        file = notation.get_file_by_char(string[0])
+        rank = notation.get_rank_by_char(string[1])
 
         return Coordinate(file, rank)
 
 
-    @staticmethod
-    def _get_file_from_char(char):
-        num_in_alphabet = Coordinate._get_char_number_in_alphabet(char.lower())
-
-        if num_in_alphabet < 0 or num_in_alphabet > 7:
-            raise ValueError(char)
-
-        return num_in_alphabet
-
-    @staticmethod
-    def _get_rank_from_char(char):
-        try:
-            return int(char) - 1
-        except ValueError:
-            raise ValueError(char)
-
-    @staticmethod
-    def _get_char_number_in_alphabet(char):
-        return ord(char) - 97
 

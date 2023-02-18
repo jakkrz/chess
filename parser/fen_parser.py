@@ -10,7 +10,6 @@ import notation
 
 
 class FenParser:
-
     def parse(self, string: str):
         result = GameState()
         fields = self._split_into_fields(string)
@@ -19,7 +18,7 @@ class FenParser:
 
         result.castling_permissions = CastlingPermissions.from_string(fields[2])
 
-        en_passant_target = self._get_en_passant_target_square(fields[3])
+        en_passant_target = self._parse_en_passant_target_square(fields[3])
         result.en_passant_target_square = en_passant_target
         result.halfmove_clock = self._get_halfmove_clock(fields[4])
         result.fullmove_count = self._get_fullmove_count(fields[5])
@@ -69,7 +68,7 @@ class FenParser:
             raise InvalidColorString
 
 
-    def _get_en_passant_target_square(self, string):
+    def _parse_en_passant_target_square(self, string):
         if string == "-":
             return None
 
