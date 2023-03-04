@@ -1,6 +1,7 @@
 from piece import Piece, PieceType
 from color import Color
 from typing import List, Optional
+from coordinate import Coordinate
 
 _emoji_mapping = {
     Piece(Color.BLACK, PieceType.KING): "♔",
@@ -37,6 +38,8 @@ class Board:
 
         self.matrix = matrix
 
+    def at(self, coordinate: Coordinate) -> Optional[Piece]:
+        return self.matrix[coordinate.rank][coordinate.file]
 
     def __repr__(self) -> str:
         result = ""
@@ -52,3 +55,15 @@ class Board:
             result += "\n"
 
         return result
+
+    def square_is_empty(self, coordinate: Coordinate) -> bool:
+        return self.at(coordinate) is None
+
+    def get_nth_rank_for_color(self, n: int, color: Color) -> int:
+        if color is Color.WHITE:
+            return -1 + n
+        else:
+            return 8 - n
+
+    def contains_square(self, square: Coordinate) -> bool:
+        return 0 <= square.file <= 7 and 0 <= square.rank <= 7

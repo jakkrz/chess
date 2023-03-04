@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import notation
 
+
 @dataclass
 class Coordinate:
     file: int
@@ -25,5 +26,8 @@ class Coordinate:
 
         return Coordinate(file, rank)
 
+    def __add__(self, other: "Coordinate"):
+        return Coordinate(self.file + other.file, self.rank + other.rank)
 
-
+    def __hash__(self) -> int:
+        return hash(self.file) ^ hash(self.rank)
