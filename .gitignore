@@ -1,6 +1,7 @@
 __pycache__
 .python-version
 venv36/
+.coverage
 
 saved_games
 

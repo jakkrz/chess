@@ -10,5 +10,3 @@ class Color(Enum):
             return Color.BLACK
         else:
             return Color.WHITE
-        
-

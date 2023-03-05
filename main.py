@@ -9,6 +9,5 @@ def main():
     files.save_game_to_file("saved_games/game.fen", game_state)
 
 
-
 if __name__ == "__main__":
     main()

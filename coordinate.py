@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-import notation
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Coordinate:
     file: int
     rank: int
@@ -21,13 +20,33 @@ class Coordinate:
         if len(string) != 2:
             raise ValueError(string)
 
-        file = notation.get_file_by_char(string[0])
-        rank = notation.get_rank_by_char(string[1])
+        file = Coordinate.get_file_by_char(string[0])
+        rank = Coordinate.get_rank_by_char(string[1])
 
         return Coordinate(file, rank)
 
     def __add__(self, other: "Coordinate"):
         return Coordinate(self.file + other.file, self.rank + other.rank)
 
-    def __hash__(self) -> int:
-        return hash(self.file) ^ hash(self.rank)
+    def __sub__(self, other: "Coordinate"):
+        return Coordinate(self.file - other.file, self.rank - other.rank)
+
+    @staticmethod
+    def _get_char_number_in_alphabet(char: str):
+        return ord(char) - 97
+
+    @staticmethod
+    def get_file_by_char(char: str) -> int:
+        num_in_alphabet = Coordinate._get_char_number_in_alphabet(char.lower())
+
+        if num_in_alphabet < 0 or num_in_alphabet > 7:
+            raise ValueError(char)
+
+        return num_in_alphabet
+
+    @staticmethod
+    def get_rank_by_char(char: str) -> int:
+        try:
+            return int(char) - 1
+        except ValueError:
+            raise ValueError(char)
