@@ -2,10 +2,7 @@ from color import Color
 from piece import PieceType
 from enum import Enum, auto
 import notation
-
-class CastlingSide(Enum):
-    KINGSIDE = auto()
-    QUEENSIDE = auto()
+from castling_side import CastlingSide
 
 class CastlingPermissions:
     def __init__(self):
@@ -46,7 +43,7 @@ class CastlingPermissions:
             elif side is CastlingSide.QUEENSIDE:
                 return self.black_queenside
 
-    def set_can_castle_on_side(self, color: Color, side: CastlingSide, can_castle):
+    def set_can_castle_on_side(self, color: Color, side: CastlingSide, can_castle: bool):
         if color is Color.WHITE:
             if side is CastlingSide.KINGSIDE:
                 self.white_kingside = can_castle

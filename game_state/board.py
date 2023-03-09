@@ -1,6 +1,6 @@
 from piece import Piece, PieceType
 from color import Color
-from typing import List, Optional
+from typing import List, Optional, Set
 from coordinate import Coordinate
 
 _emoji_mapping = {
@@ -41,6 +41,9 @@ class Board:
     def at(self, coordinate: Coordinate) -> Optional[Piece]:
         return self.matrix[coordinate.rank][coordinate.file]
 
+    def set_at(self, coordinate: Coordinate, value: Optional[Piece]) -> None:
+        self.matrix[coordinate.rank][coordinate.file] = value
+
     def __repr__(self) -> str:
         result = ""
 
@@ -67,3 +70,25 @@ class Board:
 
     def contains_square(self, square: Coordinate) -> bool:
         return 0 <= square.file <= 7 and 0 <= square.rank <= 7
+
+    def get_squares_surrounding_square(self, square: Coordinate) -> Set[Coordinate]:
+        offsets = [
+            Coordinate(-1, -1),
+            Coordinate( 0, -1),
+            Coordinate( 1, -1),
+            Coordinate(-1,  0),
+            Coordinate( 1,  0),
+            Coordinate(-1,  1),
+            Coordinate( 0,  1),
+            Coordinate( 1,  1),
+        ]
+
+        squares = set()
+
+        for offset in offsets:
+            new_pos = square + offset
+
+            if self.contains_square(new_pos):
+                squares.add(new_pos)
+
+        return squares

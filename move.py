@@ -1,4 +1,4 @@
-from game_state.castling_permissions import CastlingSide
+from castling_side import CastlingSide
 from coordinate import Coordinate
 from dataclasses import dataclass
 from color import Color
