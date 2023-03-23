@@ -24,6 +24,14 @@ from engine.castling_squares import (
 from castling_side import CastlingSide
 
 
+def verify_move(game_state: GameState, move: Move) -> bool:
+    return move in generate_moves(game_state)
+
+
+def is_in_checkmate(game_state: GameState) -> bool:
+    return generate_moves(game_state) == set()
+
+
 def generate_moves(game_state: GameState) -> Set[Move]:
     result = set()
 
