@@ -28,7 +28,7 @@ from color import Color
 from networking.connection import Connection
 
 
-INITIAL_WINDOW_DIMENSIONS = (800, 600)
+INITIAL_WINDOW_DIMENSIONS = (600, 600)
 
 
 pygame.init()
@@ -118,7 +118,7 @@ def get_square_size(chessboard_size: int) -> float:
 
 
 def square_is_white(square: Coordinate):
-    return (square.file + square.rank) % 2 == 0
+    return (square.file + square.rank) % 2 != 0
 
 
 def get_square_white_or_black_color(square: Coordinate) -> pygame.color.Color:
