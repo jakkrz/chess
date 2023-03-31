@@ -3,7 +3,9 @@ from queue import Queue
 from engine.engine import (
     verify_move,
     do_move,
-    is_in_checkmate
+    is_in_checkmate,
+    square_contains_color,
+    generate_moves_for_piece
 )
 from move import Move
 import threading
@@ -23,19 +25,13 @@ from move import (
     EnPassantMove,
     BasicMove
 )
-from files import load_default_game
-from color import Color
-from networking.connection import Connection
 
 
 INITIAL_WINDOW_DIMENSIONS = (600, 600)
 
 
 pygame.init()
-# game_state, client_color, connection = input_sequence()
-game_state = load_default_game()
-client_color = Color.WHITE
-connection = Connection(None, None)
+game_state, client_color, connection = input_sequence()
 game_state_lock = threading.Lock()
 move_queue = Queue(maxsize=1)
 
@@ -50,6 +46,7 @@ def verify_and_do_move(move: Move):
 
 def play_client_move():
     move = move_queue.get()
+    connection.send_move(move)
 
     verify_and_do_move(move)
 
@@ -75,6 +72,9 @@ business_logic_thread = threading.Thread(target=business_logic)
 business_logic_thread.start()
 
 
+# possible_moves_for_selected_piece: Optional[Set[Move]] = set([BasicMove(Coordinate(0, 0), Coordinate(0, 4))])
+# mouse_offset: Optional[Tuple[int, int]] = (0, 0)
+# selected_piece_square = Coordinate(0, 0)
 possible_moves_for_selected_piece: Optional[Set[Move]] = None
 mouse_offset: Optional[Tuple[int, int]] = None
 selected_piece_square = None
@@ -212,16 +212,91 @@ def draw_selected_piece(surface: pygame.surface.Surface, chessboard_rect: pygame
         draw_piece_at_rect(surface, piece, piece_rect)
 
 
+def on_mouse_button_down(chessboard_rect: pygame.rect.Rect) -> None:
+    with game_state_lock:
+        global selected_piece_square
+        global mouse_offset
+        global possible_moves_for_selected_piece
+
+        square_under_mouse, offset = get_square_on_board_and_offset_for_position(chessboard_rect, pygame.mouse.get_pos())
+
+        if game_state.color_to_move is not client_color:
+            return
+
+        if not square_contains_color(game_state, square_under_mouse, game_state.color_to_move):
+            return
+
+        selected_piece_square = square_under_mouse
+        mouse_offset = offset
+        possible_moves_for_selected_piece = generate_moves_for_piece(game_state, square_under_mouse)
+
+    
+def get_square_on_board_and_offset_for_position(chessboard_rect: pygame.rect.Rect, position: Tuple[int, int]) -> Tuple[Coordinate, Tuple[int, int]]:
+    chessboard_padding_x, chessboard_padding_y, chessboard_size, _ = chessboard_rect
+    square_size = get_square_size(chessboard_size)
+
+    position_x, position_y = position
+
+    relative_position_x = position_x - chessboard_padding_x
+    relative_position_y = position_y - chessboard_padding_y
+
+    square_x = int(relative_position_x // square_size)
+    square_y = int(relative_position_y // square_size)
+    offset_x = int(relative_position_x % square_size)
+    offset_y = int(relative_position_y % square_size)
+
+    return Coordinate(square_x, 7 - square_y), (offset_x, offset_y)
+
+
+def get_possible_move_with_signature_square(square: Coordinate) -> Optional[Move]:
+    if possible_moves_for_selected_piece is None:
+        return None
+
+    for move in possible_moves_for_selected_piece:
+        if get_move_signature_square(move) == square:
+            return move
+
+    return None
+
+
+def on_mouse_button_up(chessboard_rect: pygame.rect.Rect) -> None:
+    with game_state_lock:
+        global selected_piece_square
+        global mouse_offset
+        global possible_moves_for_selected_piece
+
+        square_under_mouse, _ = get_square_on_board_and_offset_for_position(chessboard_rect, pygame.mouse.get_pos())
+
+        move = get_possible_move_with_signature_square(square_under_mouse)
+
+        if move is not None:
+            # TODO: handle promotion moves separately
+            move_queue.put(move)
+
+
+        selected_piece_square = None
+        mouse_offset = None
+        possible_moves_for_selected_piece = None
+
+
 def render_logic():
     window = pygame.display.set_mode(INITIAL_WINDOW_DIMENSIONS, pygame.RESIZABLE)
 
     while True:
+        chessboard_rect = get_chessboard_rect(window.get_size())
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    on_mouse_button_down(chessboard_rect)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    on_mouse_button_up(chessboard_rect)
+                
 
         window.fill((0, 0, 0))
-        chessboard_rect = get_chessboard_rect(window.get_size())
         draw_chessboard(window, chessboard_rect)
 
         pygame.display.update()

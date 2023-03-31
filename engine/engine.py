@@ -49,7 +49,7 @@ def generate_moves(game_state: GameState) -> Set[Move]:
     return result
 
 
-def generate_moves_for_piece(game_state: GameState, piece_square: Coordinate, must_evade_check: bool = False) -> Set[Move]:
+def generate_moves_for_piece(game_state: GameState, piece_square: Coordinate, must_evade_check: bool = True) -> Set[Move]:
     piece_at_square = game_state.board.at(piece_square)
 
     if piece_at_square is None:
@@ -257,8 +257,6 @@ def squares_are_empty(game_state: GameState, squares: Set[Coordinate]) -> bool:
 
 
 def generate_moves_for_pawn(game_state: GameState, piece_square: Coordinate) -> Set[Move]:
-    # TODO: fix en passant and basic move duplication
-    # implement diagonal promotion moves
     result_without_promotion_moves = set()
     piece_at_square = game_state.board.at(piece_square)
 
@@ -289,7 +287,7 @@ def generate_moves_for_pawn(game_state: GameState, piece_square: Coordinate) -> 
     if square_contains_color(game_state, right_diagonal_square, piece_color.opposite()):
         result_without_promotion_moves.add(BasicMove(piece_square, right_diagonal_square))
 
-    if square_contains_color(game_state, right_diagonal_square, piece_color.opposite()):
+    if square_contains_color(game_state, left_diagonal_square, piece_color.opposite()):
         result_without_promotion_moves.add(BasicMove(piece_square, left_diagonal_square))
 
     if right_diagonal_square == game_state.en_passant_target_square:
@@ -356,7 +354,7 @@ def move_evades_check(game_state: GameState, move: Move) -> bool:
     game_state_copy = deepcopy(game_state)
     do_move(game_state_copy, move)
 
-    return not is_in_check(game_state, move_doer)
+    return not is_in_check(game_state_copy, move_doer)
 
 
 def get_move_doer(game_state: GameState, move: Move) -> Color:
