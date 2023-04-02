@@ -58,7 +58,7 @@ def establish_network_connection_as_server() -> Connection:
     port = get_positive_number_input("Enter port to host connection on: ")
 
     print("Waiting for enemy to connect...")
-    conn = Connection.host_connection_on_port(port, debug=True)
+    conn = Connection.host_connection_on_port(port)
 
     return conn
 
