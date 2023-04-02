@@ -53,7 +53,6 @@ def generate_moves_for_piece(game_state: GameState, piece_square: Coordinate, mu
     piece_at_square = game_state.board.at(piece_square)
 
     if piece_at_square is None:
-        print(piece_square)
         raise ValueError("no piece at square")
 
     if piece_at_square.piece_type is PieceType.QUEEN:
@@ -308,7 +307,7 @@ def generate_moves_for_pawn(game_state: GameState, piece_square: Coordinate) -> 
         else:
             result_with_promotion_moves.add(move)
 
-    return result_without_promotion_moves
+    return result_with_promotion_moves
 
 
 def get_promotable_piece_types() -> Set[PieceType]:

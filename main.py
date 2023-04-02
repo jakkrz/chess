@@ -26,5 +26,4 @@ if __name__ == "__main__":
     render_logic_thread.start()
     business_logic_thread.start()
 
-
     # handle graceful shutdown

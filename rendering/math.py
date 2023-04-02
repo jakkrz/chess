@@ -6,12 +6,17 @@ import pygame
 
 def get_chessboard_rect(window_dimensions: Tuple[int, int]) -> pygame.rect.Rect:
     window_width, window_height = window_dimensions
-    shorter_side = min(window_width, window_height)
+    chessboard_size = get_chessboard_size(window_dimensions)
 
-    padding_left = ceil((window_width - shorter_side) * 0.5)
-    padding_top = ceil((window_height - shorter_side) * 0.5)
+    padding_left = ceil((window_width - chessboard_size) * 0.5)
+    padding_top = ceil((window_height - chessboard_size) * 0.5)
 
-    return pygame.rect.Rect(padding_left, padding_top, shorter_side, shorter_side)
+    return pygame.rect.Rect(padding_left, padding_top, chessboard_size, chessboard_size)
+
+
+def get_chessboard_size(window_dimensions: Tuple[int, int]) -> int:
+    window_width, window_height = window_dimensions
+    return min(window_width, window_height)
 
 
 def get_square_rect(chessboard_rect: pygame.rect.Rect, square: Coordinate) -> pygame.rect.Rect:

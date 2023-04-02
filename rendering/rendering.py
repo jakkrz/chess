@@ -1,21 +1,25 @@
 from engine.engine import (
     square_contains_color,
-    generate_moves_for_piece
+    generate_moves_for_piece,
+    get_promotable_piece_types
 )
 
 from environment import Environment
 from rendering.math import (
     get_chessboard_rect,
+    get_chessboard_size,
     get_square_rect,
     get_square_size,
     get_square_on_board_and_offset_for_position
 )
+from color import Color
 from rendering.selection import Selection
 from move import Move
 import pygame
-from piece import Piece
-from typing import Set, Optional
-from math import ceil
+from copy import deepcopy
+from piece import Piece, PieceType
+from typing import Set, Optional, Tuple
+from math import floor, ceil
 from coordinate import Coordinate
 from rendering.tilemap import get_piece_image
 from engine.castling_squares import get_castling_king_target_square
@@ -141,7 +145,6 @@ def on_selection_start(environment: Environment, chessboard_rect: pygame.rect.Re
 
         possible_moves_for_selected_piece = generate_moves_for_piece(game_state, square_under_mouse) 
         return Selection(square_under_mouse, offset, possible_moves_for_selected_piece)
-
     
 
 def get_possible_move_with_signature_square(moves: Set[Move], square: Coordinate) -> Optional[Move]:
@@ -152,20 +155,128 @@ def get_possible_move_with_signature_square(moves: Set[Move], square: Coordinate
     return None
 
 
-def on_selection_end(environment: Environment, chessboard_rect: pygame.rect.Rect, selection: Selection) -> None:
+def on_selection_end(environment: Environment, chessboard_rect: pygame.rect.Rect, selection: Selection) -> Optional[PromotionMove]:
     if selection is not None:
         square_under_mouse, _ = get_square_on_board_and_offset_for_position(chessboard_rect, pygame.mouse.get_pos())
 
         move = get_possible_move_with_signature_square(selection.possible_moves_for_selected_piece, square_under_mouse)
 
         if move is not None:
-            # TODO: handle promotion moves separately
-            environment.move_queue.put(move)
+            if isinstance(move, PromotionMove):
+                return move
+            else:
+                print(move)
+                environment.move_queue.put(move)
+
+
+PROMOTION_MENU_PADDING_FACTOR = 0.1
+
+
+def get_promotion_menu_size(surface: pygame.surface.Surface) -> Tuple[int, int]:
+    promotable_piece_type_count = len(get_promotable_piece_types())
+    chessboard_size = get_chessboard_size(surface.get_size())
+    square_size = get_square_size(chessboard_size)
+
+    padding = square_size * PROMOTION_MENU_PADDING_FACTOR
+    padding_both_sides = padding * 2
+
+    width = floor(square_size + padding_both_sides)
+    height = floor(promotable_piece_type_count * square_size + padding_both_sides)
+
+    return (width, height)
+    
+
+def get_promotion_menu_rect(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate) -> pygame.rect.Rect:
+    promotion_menu_width, promotion_menu_height = get_promotion_menu_size(surface)
+
+    chessboard_rect = get_chessboard_rect(surface.get_size())
+    target_square_x, target_square_y, square_size, _ = get_square_rect(chessboard_rect, promotion_move_target_square)
+    padding = square_size * PROMOTION_MENU_PADDING_FACTOR
+
+    promotion_menu_position_x = target_square_x - padding
+    promotion_menu_position_y = target_square_y - padding
+
+    return pygame.rect.Rect(promotion_menu_position_x, promotion_menu_position_y, promotion_menu_width, promotion_menu_height)
+
+
+def get_promotion_menu_piece_rect_by_number(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, number: int) -> pygame.rect.Rect:
+    chessboard_rect = get_chessboard_rect(surface.get_size())
+    target_square_x, target_square_y, square_size, _ = get_square_rect(chessboard_rect, promotion_move_target_square)
+    chessboard_size = get_chessboard_size(surface.get_size())
+    square_size = get_square_size(chessboard_size)
+
+    piece_rect_y = target_square_y + square_size * number
+
+    return pygame.rect.Rect(target_square_x, piece_rect_y, square_size, square_size)
+
+
+PROMOTION_MENU_PIECE_TYPE_ORDER = [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT]
+
+    
+def get_promotion_menu_piece_rect(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, piece_type: PieceType) -> pygame.rect.Rect:
+    piece_type_index = PROMOTION_MENU_PIECE_TYPE_ORDER.index(piece_type)
+
+    return get_promotion_menu_piece_rect_by_number(surface, promotion_move_target_square, piece_type_index)
+
+
+def draw_promotion_menu_frame(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate) -> None:
+    promotion_menu_rect = get_promotion_menu_rect(surface, promotion_move_target_square)
+
+    pygame.draw.rect(surface, PROMOTION_MENU_COLOR, promotion_menu_rect, border_radius=PROMOTION_MENU_BORDER_RADIUS)
+
+
+PROMOTION_MENU_COLOR = pygame.color.Color(255, 255, 255)
+PROMOTION_MENU_HIGHLIGHT_COLOR = pygame.color.Color(200, 200, 200)
+PROMOTION_MENU_BORDER_RADIUS = 5
+
+
+def draw_promotion_menu_piece(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, piece: Piece) -> None:
+    piece_rect = get_promotion_menu_piece_rect(surface, promotion_move_target_square, piece.piece_type)
+    
+    mouse_pos = pygame.mouse.get_pos()
+    if piece_rect.collidepoint(mouse_pos):
+        pygame.draw.rect(surface, PROMOTION_MENU_HIGHLIGHT_COLOR, piece_rect)
+
+    draw_piece_at_rect(surface, piece, piece_rect)
+
+
+
+def draw_promotion_menu(surface: pygame.surface.Surface, client_color: Color, promotion_move: PromotionMove):
+    promotable_piece_types = get_promotable_piece_types()    
+    
+    draw_promotion_menu_frame(surface, promotion_move.target_square)
+
+    for piece_type in promotable_piece_types:
+        draw_promotion_menu_piece(surface, promotion_move.target_square, Piece(client_color, piece_type))
+
+
+def copy_promotion_move_with_new_piece_type(promotion_move: PromotionMove, new_piece_type: PieceType):
+    new_promotion_move = deepcopy(promotion_move)
+    new_promotion_move.promote_to = new_piece_type
+
+    return new_promotion_move
+
+
+def handle_promotion_menu_click(surface: pygame.surface.Surface, environment: Environment, promotion_move: PromotionMove):
+    mouse_pos = pygame.mouse.get_pos()
+    promotable_piece_types = get_promotable_piece_types()
+
+    for piece_type in promotable_piece_types:
+        piece_rect = get_promotion_menu_piece_rect(surface, promotion_move.target_square, piece_type)
+
+        if piece_rect.collidepoint(mouse_pos):
+            new_promotion_move = copy_promotion_move_with_new_piece_type(promotion_move, piece_type)
+            environment.move_queue.put(new_promotion_move)
+
+            break
+            
+    
 
 
 def render_logic(environment: Environment):
     window = pygame.display.set_mode(INITIAL_WINDOW_DIMENSIONS, pygame.RESIZABLE)
     selection: Optional[Selection] = None
+    current_promotion_move: Optional[PromotionMove] = None
 
     while True:
         chessboard_rect = get_chessboard_rect(window.get_size())
@@ -176,16 +287,23 @@ def render_logic(environment: Environment):
                 return
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    selection = on_selection_start(environment, chessboard_rect)
+                    if not current_promotion_move:
+                        selection = on_selection_start(environment, chessboard_rect)
+                    else:
+                        handle_promotion_menu_click(window, environment, current_promotion_move)
+                        current_promotion_move = None
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     if selection is not None:
-                        on_selection_end(environment, chessboard_rect, selection)
+                        current_promotion_move = on_selection_end(environment, chessboard_rect, selection)
 
                     selection = None
                 
         window.fill((0, 0, 0))
         draw_chessboard(window, chessboard_rect, environment, selection)
+
+        if current_promotion_move is not None:
+            draw_promotion_menu(window, environment.client_color, current_promotion_move)
 
         pygame.display.update()
 
