@@ -165,7 +165,6 @@ def on_selection_end(environment: Environment, chessboard_rect: pygame.rect.Rect
             if isinstance(move, PromotionMove):
                 return move
             else:
-                print(move)
                 environment.move_queue.put(move)
 
 
