@@ -467,9 +467,7 @@ def piece_threatens_square(game_state: GameState, piece_square: Coordinate, targ
 
 
 def move_threatens_square(move: Move, square: Coordinate) -> bool:
-    if isinstance(move, BasicMove):
-        return move.target_square == square
-    elif isinstance(move, EnPassantMove):
+    if isinstance(move, BasicMove) or isinstance(move, PromotionMove) or isinstance(move, EnPassantMove):
         return move.target_square == square
     else:
         return False
