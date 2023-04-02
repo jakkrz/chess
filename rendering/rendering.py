@@ -80,8 +80,8 @@ def get_color_for_square(selection: Optional[Selection], square: Coordinate) -> 
     return white_or_black_color
 
 
-def draw_piece_at_square(surface: pygame.surface.Surface, chessboard_rect: pygame.rect.Rect, piece: Piece, square: Coordinate):
-    square_rect = get_square_rect(chessboard_rect, square)    
+def draw_piece_at_square(surface: pygame.surface.Surface, chessboard_rect: pygame.rect.Rect, piece: Piece, square: Coordinate, flip: bool):
+    square_rect = get_square_rect(chessboard_rect, square, flip)
 
     draw_piece_at_rect(surface, piece, square_rect)
 
@@ -93,13 +93,13 @@ def draw_piece_at_rect(surface: pygame.surface.Surface, piece: Piece, piece_rect
     surface.blit(pygame.transform.scale(piece_image, (piece_width, piece_height)), (piece_position_x, piece_position_y))
 
 
-def draw_chessboard(surface: pygame.surface.Surface, chessboard_rect: pygame.rect.Rect, environment: Environment, selection: Optional[Selection]) -> None:
+def draw_chessboard(surface: pygame.surface.Surface, chessboard_rect: pygame.rect.Rect, environment: Environment, selection: Optional[Selection], flip: bool) -> None:
     with environment.game_state_lock:
         for rank_index in range(8):
             for file_index in range(8):
                 square = Coordinate(rank_index, file_index)
                 square_color = get_color_for_square(selection, square)
-                square_rect = get_square_rect(chessboard_rect, square)
+                square_rect = get_square_rect(chessboard_rect, square, flip)
                 pygame.draw.rect(surface, square_color, square_rect)
 
                 if selection is not None and square == selection.selected_piece_square:
@@ -110,7 +110,7 @@ def draw_chessboard(surface: pygame.surface.Surface, chessboard_rect: pygame.rec
                 if piece_at_square is None:
                     continue
 
-                draw_piece_at_square(surface, chessboard_rect, piece_at_square, square)
+                draw_piece_at_square(surface, chessboard_rect, piece_at_square, square, flip)
 
         if selection is not None:
             draw_selected_piece(surface, environment.game_state, chessboard_rect, selection)
@@ -131,11 +131,11 @@ def draw_selected_piece(surface: pygame.surface.Surface, game_state: GameState, 
     draw_piece_at_rect(surface, piece, piece_rect)
 
 
-def on_selection_start(environment: Environment, chessboard_rect: pygame.rect.Rect) -> Optional[Selection]:
+def on_selection_start(environment: Environment, chessboard_rect: pygame.rect.Rect, flip: bool) -> Optional[Selection]:
     with environment.game_state_lock:
         game_state = environment.game_state
 
-        square_under_mouse, offset = get_square_on_board_and_offset_for_position(chessboard_rect, pygame.mouse.get_pos())
+        square_under_mouse, offset = get_square_on_board_and_offset_for_position(chessboard_rect, pygame.mouse.get_pos(), flip)
 
         if game_state.color_to_move is not environment.client_color:
             return None
@@ -155,9 +155,9 @@ def get_possible_move_with_signature_square(moves: Set[Move], square: Coordinate
     return None
 
 
-def on_selection_end(environment: Environment, chessboard_rect: pygame.rect.Rect, selection: Selection) -> Optional[PromotionMove]:
+def on_selection_end(environment: Environment, chessboard_rect: pygame.rect.Rect, selection: Selection, flip: bool) -> Optional[PromotionMove]:
     if selection is not None:
-        square_under_mouse, _ = get_square_on_board_and_offset_for_position(chessboard_rect, pygame.mouse.get_pos())
+        square_under_mouse, _ = get_square_on_board_and_offset_for_position(chessboard_rect, pygame.mouse.get_pos(), flip)
 
         move = get_possible_move_with_signature_square(selection.possible_moves_for_selected_piece, square_under_mouse)
 
@@ -186,11 +186,11 @@ def get_promotion_menu_size(surface: pygame.surface.Surface) -> Tuple[int, int]:
     return (width, height)
     
 
-def get_promotion_menu_rect(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate) -> pygame.rect.Rect:
+def get_promotion_menu_rect(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, flip: bool) -> pygame.rect.Rect:
     promotion_menu_width, promotion_menu_height = get_promotion_menu_size(surface)
 
     chessboard_rect = get_chessboard_rect(surface.get_size())
-    target_square_x, target_square_y, square_size, _ = get_square_rect(chessboard_rect, promotion_move_target_square)
+    target_square_x, target_square_y, square_size, _ = get_square_rect(chessboard_rect, promotion_move_target_square, flip)
     padding = square_size * PROMOTION_MENU_PADDING_FACTOR
 
     promotion_menu_position_x = target_square_x - padding
@@ -199,9 +199,9 @@ def get_promotion_menu_rect(surface: pygame.surface.Surface, promotion_move_targ
     return pygame.rect.Rect(promotion_menu_position_x, promotion_menu_position_y, promotion_menu_width, promotion_menu_height)
 
 
-def get_promotion_menu_piece_rect_by_number(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, number: int) -> pygame.rect.Rect:
+def get_promotion_menu_piece_rect_by_number(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, number: int, flip: bool) -> pygame.rect.Rect:
     chessboard_rect = get_chessboard_rect(surface.get_size())
-    target_square_x, target_square_y, square_size, _ = get_square_rect(chessboard_rect, promotion_move_target_square)
+    target_square_x, target_square_y, square_size, _ = get_square_rect(chessboard_rect, promotion_move_target_square, flip)
     chessboard_size = get_chessboard_size(surface.get_size())
     square_size = get_square_size(chessboard_size)
 
@@ -213,14 +213,14 @@ def get_promotion_menu_piece_rect_by_number(surface: pygame.surface.Surface, pro
 PROMOTION_MENU_PIECE_TYPE_ORDER = [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT]
 
     
-def get_promotion_menu_piece_rect(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, piece_type: PieceType) -> pygame.rect.Rect:
+def get_promotion_menu_piece_rect(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, piece_type: PieceType, flip: bool) -> pygame.rect.Rect:
     piece_type_index = PROMOTION_MENU_PIECE_TYPE_ORDER.index(piece_type)
 
-    return get_promotion_menu_piece_rect_by_number(surface, promotion_move_target_square, piece_type_index)
+    return get_promotion_menu_piece_rect_by_number(surface, promotion_move_target_square, piece_type_index, flip)
 
 
-def draw_promotion_menu_frame(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate) -> None:
-    promotion_menu_rect = get_promotion_menu_rect(surface, promotion_move_target_square)
+def draw_promotion_menu_frame(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, flip: bool) -> None:
+    promotion_menu_rect = get_promotion_menu_rect(surface, promotion_move_target_square, flip)
 
     pygame.draw.rect(surface, PROMOTION_MENU_COLOR, promotion_menu_rect, border_radius=PROMOTION_MENU_BORDER_RADIUS)
 
@@ -230,8 +230,8 @@ PROMOTION_MENU_HIGHLIGHT_COLOR = pygame.color.Color(200, 200, 200)
 PROMOTION_MENU_BORDER_RADIUS = 5
 
 
-def draw_promotion_menu_piece(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, piece: Piece) -> None:
-    piece_rect = get_promotion_menu_piece_rect(surface, promotion_move_target_square, piece.piece_type)
+def draw_promotion_menu_piece(surface: pygame.surface.Surface, promotion_move_target_square: Coordinate, piece: Piece, flip: bool) -> None:
+    piece_rect = get_promotion_menu_piece_rect(surface, promotion_move_target_square, piece.piece_type, flip)
     
     mouse_pos = pygame.mouse.get_pos()
     if piece_rect.collidepoint(mouse_pos):
@@ -241,13 +241,13 @@ def draw_promotion_menu_piece(surface: pygame.surface.Surface, promotion_move_ta
 
 
 
-def draw_promotion_menu(surface: pygame.surface.Surface, client_color: Color, promotion_move: PromotionMove):
+def draw_promotion_menu(surface: pygame.surface.Surface, client_color: Color, promotion_move: PromotionMove, flip: bool):
     promotable_piece_types = get_promotable_piece_types()    
     
-    draw_promotion_menu_frame(surface, promotion_move.target_square)
+    draw_promotion_menu_frame(surface, promotion_move.target_square, flip)
 
     for piece_type in promotable_piece_types:
-        draw_promotion_menu_piece(surface, promotion_move.target_square, Piece(client_color, piece_type))
+        draw_promotion_menu_piece(surface, promotion_move.target_square, Piece(client_color, piece_type), flip)
 
 
 def copy_promotion_move_with_new_piece_type(promotion_move: PromotionMove, new_piece_type: PieceType):
@@ -257,12 +257,12 @@ def copy_promotion_move_with_new_piece_type(promotion_move: PromotionMove, new_p
     return new_promotion_move
 
 
-def handle_promotion_menu_click(surface: pygame.surface.Surface, environment: Environment, promotion_move: PromotionMove):
+def handle_promotion_menu_click(surface: pygame.surface.Surface, environment: Environment, promotion_move: PromotionMove, flip: bool):
     mouse_pos = pygame.mouse.get_pos()
     promotable_piece_types = get_promotable_piece_types()
 
     for piece_type in promotable_piece_types:
-        piece_rect = get_promotion_menu_piece_rect(surface, promotion_move.target_square, piece_type)
+        piece_rect = get_promotion_menu_piece_rect(surface, promotion_move.target_square, piece_type, flip)
 
         if piece_rect.collidepoint(mouse_pos):
             new_promotion_move = copy_promotion_move_with_new_piece_type(promotion_move, piece_type)
@@ -277,6 +277,7 @@ def render_logic(environment: Environment):
     window = pygame.display.set_mode(INITIAL_WINDOW_DIMENSIONS, pygame.RESIZABLE)
     selection: Optional[Selection] = None
     current_promotion_move: Optional[PromotionMove] = None
+    flip = environment.client_color == Color.BLACK
 
     while True:
         chessboard_rect = get_chessboard_rect(window.get_size())
@@ -288,22 +289,22 @@ def render_logic(environment: Environment):
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if not current_promotion_move:
-                        selection = on_selection_start(environment, chessboard_rect)
+                        selection = on_selection_start(environment, chessboard_rect, flip)
                     else:
-                        handle_promotion_menu_click(window, environment, current_promotion_move)
+                        handle_promotion_menu_click(window, environment, current_promotion_move, flip)
                         current_promotion_move = None
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     if selection is not None:
-                        current_promotion_move = on_selection_end(environment, chessboard_rect, selection)
+                        current_promotion_move = on_selection_end(environment, chessboard_rect, selection, flip)
 
                     selection = None
                 
         window.fill((0, 0, 0))
-        draw_chessboard(window, chessboard_rect, environment, selection)
+        draw_chessboard(window, chessboard_rect, environment, selection, flip)
 
         if current_promotion_move is not None:
-            draw_promotion_menu(window, environment.client_color, current_promotion_move)
+            draw_promotion_menu(window, environment.client_color, current_promotion_move, flip)
 
         pygame.display.update()
 

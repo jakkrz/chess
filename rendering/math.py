@@ -19,23 +19,27 @@ def get_chessboard_size(window_dimensions: Tuple[int, int]) -> int:
     return min(window_width, window_height)
 
 
-def get_square_rect(chessboard_rect: pygame.rect.Rect, square: Coordinate) -> pygame.rect.Rect:
+def get_square_rect(chessboard_rect: pygame.rect.Rect, square: Coordinate, flip: bool) -> pygame.rect.Rect:
     _, _, chessboard_size, _ = chessboard_rect
 
     square_size = ceil(get_square_size(chessboard_size))
-    square_pos = get_square_position(chessboard_rect, square)
+    square_pos = get_square_position(chessboard_rect, square, flip)
 
     square_position_x, square_position_y = square_pos
     
     return pygame.rect.Rect(square_position_x, square_position_y, square_size, square_size)
 
 
-def get_square_position(chessboard_rect: pygame.rect.Rect, square: Coordinate):
+def get_square_position(chessboard_rect: pygame.rect.Rect, square: Coordinate, flip: bool):
     padding_left, padding_top, chessboard_size, _ = chessboard_rect
     square_size = get_square_size(chessboard_size)
 
     offset_x = square_size * square.file
-    offset_y = square_size * (7 - square.rank)
+
+    if flip:
+        offset_y = square_size * square.rank 
+    else:
+        offset_y = square_size * (7 - square.rank)
 
     return (padding_left + offset_x, padding_top + offset_y)
 
@@ -46,7 +50,7 @@ def get_square_size(chessboard_size: int) -> float:
     return square_size
 
 
-def get_square_on_board_and_offset_for_position(chessboard_rect: pygame.rect.Rect, position: Tuple[int, int]) -> Tuple[Coordinate, Tuple[int, int]]:
+def get_square_on_board_and_offset_for_position(chessboard_rect: pygame.rect.Rect, position: Tuple[int, int], flip: bool) -> Tuple[Coordinate, Tuple[int, int]]:
     chessboard_padding_x, chessboard_padding_y, chessboard_size, _ = chessboard_rect
     square_size = get_square_size(chessboard_size)
 
@@ -60,4 +64,7 @@ def get_square_on_board_and_offset_for_position(chessboard_rect: pygame.rect.Rec
     offset_x = int(relative_position_x % square_size)
     offset_y = int(relative_position_y % square_size)
 
-    return Coordinate(square_x, 7 - square_y), (offset_x, offset_y)
+    if flip:
+        return Coordinate(square_x, square_y), (offset_x, offset_y)
+    else:
+        return Coordinate(square_x, 7 - square_y), (offset_x, offset_y)
