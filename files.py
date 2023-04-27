@@ -1,4 +1,4 @@
-from parser.fen_parser import FenParser
+from parsing.fen_parser import FenParser
 import pathlib
 from game_state.game_state import GameState
 

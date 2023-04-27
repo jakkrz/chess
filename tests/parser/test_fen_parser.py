@@ -1,5 +1,5 @@
 import pytest
-from parser.fen_parser import FenParser
+from parsing.fen_parser import FenParser
 
 @pytest.fixture
 def fen_parser():

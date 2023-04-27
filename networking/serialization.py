@@ -9,7 +9,7 @@ from move import (
     BasicMove
 )
 from game_state.game_state import GameState
-from parser.fen_parser import FenParser
+from parsing.fen_parser import FenParser
 from coordinate import Coordinate
 from notation import (
     get_piece_by_character,
