@@ -20,10 +20,8 @@ if __name__ == "__main__":
         client_color    = client_color
     )
 
-    render_logic_thread = threading.Thread(target=render_logic, args=(shared_environment,))
     business_logic_thread = threading.Thread(target=business_logic, args=(shared_environment, connection))
 
-    render_logic_thread.start()
     business_logic_thread.start()
 
-    # handle graceful shutdown
+    render_logic(shared_environment)
