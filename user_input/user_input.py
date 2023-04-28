@@ -32,10 +32,11 @@ def input_sequence() -> Tuple[GameState, Color, Connection]:
 
     
 def create_game() -> Tuple[GameState, Color, Connection]:
+    debug = get_enumeration_input("What mode would you like to run the program?", ["debug", "normal"]) is "debug"
     game_state = get_game_state_input("Load game from file (empty=default game): ")
     client_color_string = get_enumeration_input("Enter color to play as: ", ["white", "black"])
     client_color = Color.WHITE if client_color_string == "white" else Color.BLACK
-    connection = establish_network_connection_as_server()
+    connection = establish_network_connection_as_server(debug=debug)
 
     send_starting_data_through_connection(connection, client_color.opposite(), game_state)
 
@@ -54,11 +55,11 @@ def receive_starting_data_from_connection(conn: Connection) -> Tuple[Color, Game
     return color, game_state
 
 
-def establish_network_connection_as_server() -> Connection:
+def establish_network_connection_as_server(debug: bool) -> Connection:
     port = get_positive_number_input("Enter port to host connection on: ")
 
     print("Waiting for enemy to connect...")
-    conn = Connection.host_connection_on_port(port)
+    conn = Connection.host_connection_on_port(port, debug=debug)
 
     return conn
 
