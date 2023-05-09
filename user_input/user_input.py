@@ -58,6 +58,7 @@ def receive_starting_data_from_connection(conn: Connection) -> Tuple[Color, Game
 def establish_network_connection_as_server(debug: bool) -> Connection:
     port = get_positive_number_input("Enter port to host connection on: ")
 
+    print(f"IP address: {socket.gethostbyname(socket.gethostname())}")
     print("Waiting for enemy to connect...")
     conn = Connection.host_connection_on_port(port, debug=debug)
 
